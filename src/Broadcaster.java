@@ -20,21 +20,24 @@ import java.util.logging.Logger;
  */
 public class Broadcaster {
 
-    ObjectOutputStream oos;
+    static ObjectOutputStream oos;
     static ArrayList<ClientUser> clientList;
-    LogManager logManager;
-    int port;
+    static LogManager logManager;
+    static int port;
 
-    Broadcaster() {
+    Broadcaster(){}
+    
+    Broadcaster(ArrayList<ClientUser> c) {
+        clientList=c;
     }
 
     Broadcaster(int _port) {
-        port = _port;
-        clientList = new ArrayList<ClientUser>();
+        port = _port;        
         logManager = new LogManager();
     }
 
-    public void addCleint(InetAddress ip, String nickName) {
+    public void addCleint(InetAddress ip, String nickName) {        
+        System.out.println("ADD client "+ip);
         ClientUser user = new ClientUser(ip, nickName);
         clientList.add(user);
         logManager.doLog("add " + ip.getHostAddress() + "to the Broadcast Client list");
@@ -42,6 +45,7 @@ public class Broadcaster {
     }
     
     public void deleteClient(String name){
+        System.out.println("DELETE client "+name);
         for(int i=0;i<clientList.size();i++){
             ClientUser user=clientList.get(i);
             String n=user.getUserNickName();
@@ -51,6 +55,17 @@ public class Broadcaster {
                 break;
             }
         }
+    }
+    
+    public InetAddress findIPByName(String name){
+        InetAddress rlt=null;
+        for(int i=0;i<clientList.size();i++){
+            ClientUser cu=clientList.get(i);
+            if(cu.getUserNickName().equals(name)){
+                rlt=cu.getUserIP();
+            }
+        }
+        return rlt;
     }
 
     public boolean checkIsClientInList(InetAddress ip) { //check if the client already in the list or not
@@ -76,6 +91,7 @@ public class Broadcaster {
     }
 
     public boolean broadcast(Message msg) {
+        System.out.println("broadcast msg:"+msg.getMsg());
         boolean rlt = true;
         Socket toClient;
         for (int i = 0; i < clientList.size(); i++) {
@@ -114,10 +130,11 @@ public class Broadcaster {
         try {
             CodeBookManager cbm = new CodeBookManager();
             CodeBook cb = new CodeBook();
-            System.out.println("server codebook" + cbm.getContent().get("a"));
-            cb.setContent(cbm.getContent().getMap());
+            System.out.println("server codebook" + cbm.getContent().getCode("a"));
+            cb.setEncodeMap(cbm.getContent().getEncodeMap());
+            cb.setDecodeMap(cbm.getContent().getDecodeMap());            
             CodebookMessage cm = new CodebookMessage(cb);
-            System.out.println("to be sent codebook" + cb.get("a"));
+            System.out.println("to be sent codebook" + cb.getCode("a"));
             Socket toClient = new Socket(ip, port);
             ObjectOutputStream oos = new ObjectOutputStream(toClient.getOutputStream());
             oos.writeObject(cm);
@@ -125,6 +142,23 @@ public class Broadcaster {
             logManager.doLog("Server send codebook to" + ip + " finished.");
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+    
+    public void broadcastCodeBook(){
+        System.out.println("broadcastCodeBook()");
+        Message msg=new Message(0,"System Msg:","Server Update Codebook");
+        this.broadcast(msg);
+        System.out.println(clientList.size());
+        for (int i = 0; i < clientList.size(); i++) {
+            InetAddress ip=clientList.get(i).getUserIP();
+            System.out.println(ip.getHostAddress());
+            try {
+                this.sendCodebook(ip);               
+                logManager.doLog("Server broadcast codebook to" + clientList.get(i).getUserIP().getHostAddress());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }

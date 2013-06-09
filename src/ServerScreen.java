@@ -1,6 +1,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,29 +28,38 @@ public class ServerScreen extends javax.swing.JFrame {
     static LogManager logManager;
     static boolean isFrist = true;
     static JTextArea _codebookArea;
+    static HuffmanEncoder encoder;
+    static HuffmanDecoder decoder;
+    static ArrayList<ClientUser> clientList;
+    static Broadcaster broadcaster;
+    static WordFreqManager wfm;
+    static JTextArea wordcountArea;
 
     public ServerScreen() {
         initComponents();
         _codebookArea = this.codebookArea;
         serverStatus = this.serverStatusArea;
+        wordcountArea=this.wordCountArea;
         serverStatus.setEditable(false);
         logManager = new LogManager();
-        codebook = new CodeBook();
+        codebook = new CodeBook();        
         cbm = new CodeBookManager(codebook);
-        cbm.initCodebook();
-        ServerScreen.updateCodebookArea();
+        cbm.initCodebook();                     //generate codebook or read codebook
+        clientList=new ArrayList<ClientUser>();
+        broadcaster=new Broadcaster(clientList);
+        encoder=new HuffmanEncoder();
+        decoder=new HuffmanDecoder();
+        updateCodebookArea();
+        this.updateWordCountArea();
         server = new Server();
         server.start();
-        cbm.setCodeword("a", "1111");
-        cbm.setCodeword("e", "110");
-        System.out.println(cbm.getCodeword("a"));
-        System.out.println(cbm.getCodeword("S"));
-        System.out.println(cbm.getCodeword("h"));
-        System.out.println(cbm.getCodeword("L"));
-        System.out.println(cbm.getCodeword("e"));
-        System.out.println(cbm.getCodeword("Y"));
+//        System.out.println(codebook.getCode(" "));
+//        String t=encoder.encode("B F F : , { } < > @ @ 0 = +");
+//        System.out.println("encode:"+t);
+//        String f=decoder.decode(t);
+//        System.out.println("decode:"+f);        
         logManager.doLog("Server is ON!");
-
+        
     }
 
     /**
@@ -69,10 +79,10 @@ public class ServerScreen extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         serverStatusArea = new javax.swing.JTextArea();
         jLabel5 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jList1 = new javax.swing.JList();
         jScrollPane3 = new javax.swing.JScrollPane();
         codebookArea = new javax.swing.JTextArea();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        wordCountArea = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -111,19 +121,18 @@ public class ServerScreen extends javax.swing.JFrame {
         jLabel5.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jLabel5.setText("Word Count");
 
-        jList1.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
-        });
-        jScrollPane2.setViewportView(jList1);
-
         jScrollPane3.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         codebookArea.setColumns(20);
         codebookArea.setLineWrap(true);
         codebookArea.setRows(5);
         jScrollPane3.setViewportView(codebookArea);
+
+        jScrollPane4.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        wordCountArea.setColumns(20);
+        wordCountArea.setRows(5);
+        jScrollPane4.setViewportView(wordCountArea);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -143,19 +152,13 @@ public class ServerScreen extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel2)
+                    .addComponent(updateBut)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 158, Short.MAX_VALUE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel2)
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addGap(18, 18, 18))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(updateBut)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel4)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 303, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -167,8 +170,8 @@ public class ServerScreen extends javax.swing.JFrame {
                 .addGap(21, 21, 21)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(updateBut)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(updateBut, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(openLogBut))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -179,22 +182,33 @@ public class ServerScreen extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 247, Short.MAX_VALUE)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 247, Short.MAX_VALUE)
-                    .addComponent(jScrollPane2))
+                    .addComponent(jScrollPane4))
                 .addContainerGap(36, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public static void updateCodebookArea() {
+    public void updateCodebookArea() {
         StringBuffer buffer = new StringBuffer();
         for (Map.Entry<String, String> entry : cbm.getContent().getEntrySet()) {
             buffer.append(entry.getKey() + "\t=>" + entry.getValue() + "\n");
         }
         ServerScreen._codebookArea.setText(buffer.toString());
     }
+    public static void updateWordCountArea(){
+        wfm=new WordFreqManager();
+        StringBuffer buffer = new StringBuffer();
+        for (Map.Entry<String, Integer> entry : wfm.getFrquency().entrySet()) {
+            buffer.append(entry.getKey() + "\t=>" + entry.getValue() + "\n");
+        }
+        wordcountArea.setText(buffer.toString());
+    }
+    
     private void updateButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateButActionPerformed
         // TODO add your handling code here:
+        cbm.updateCodeBook();  
+        this.updateCodebookArea();
     }//GEN-LAST:event_updateButActionPerformed
 
     private void openLogButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openLogButActionPerformed
@@ -253,12 +267,12 @@ public class ServerScreen extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
-    private javax.swing.JList jList1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JButton openLogBut;
     private javax.swing.JTextArea serverStatusArea;
     private javax.swing.JButton updateBut;
+    private javax.swing.JTextArea wordCountArea;
     // End of variables declaration//GEN-END:variables
 }
