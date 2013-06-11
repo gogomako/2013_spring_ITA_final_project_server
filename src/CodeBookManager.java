@@ -21,8 +21,9 @@ import org.jdom2.output.XMLOutputter;
  *
  * @author Ashley,Mako
  */
-public class CodeBookManager {
+public class CodeBookManager implements java.io.Serializable {
 
+    private static final long serialVersionUID = 1L;
     static CodeBook codebook;
     static String codebookPath = "codebook.xml"; //codebook file path    
     static XMLOutputter fmt;
@@ -43,7 +44,7 @@ public class CodeBookManager {
         if (cbFile.exists()) {
             this.readCodeBookFromXML();
             wfm.readWordFreqFromXML();
-        } else {            
+        } else {
             this.setDefaultCodeBook(); //if codebook not exist. create a default codebook
             wfm.writeWordFreqToXML();
             this.writeCodeBookToXML();
@@ -145,7 +146,7 @@ public class CodeBookManager {
         this.writeCodeBookToXML();
         wfm.writeWordFreqToXML();
         ServerScreen.updateWordCountArea();
-        broadcaster=new Broadcaster();
+        broadcaster = new Broadcaster();
         broadcaster.broadcastCodeBook();
     }
 
@@ -172,7 +173,7 @@ public class CodeBookManager {
     public void setCodeBook(Node root) {
         if (root != null) {
             if (!root.getWord().equals("-5")) {
-                System.out.println("codebook put "+root.getWord()+","+root.getCode());
+                System.out.println("codebook put " + root.getWord() + "," + root.getCode());
                 codebook.put(root.getWord(), root.getCode());
             }
             setCodeBook(root.left);
@@ -185,10 +186,10 @@ public class CodeBookManager {
         while (nodeList.size() > 1) {
             nodeList = wfm.sortFrequency(nodeList);
             internalNode = new Node();
-            internalNode.setWord("-5");//indicate internal node
-            internalNode.setLeft(nodeList.get(0));
-            nodeList.remove(0);
+            internalNode.setWord("-5");//indicate internal node            
             internalNode.setRight(nodeList.get(0));
+            nodeList.remove(0); 
+            internalNode.setLeft(nodeList.get(0));
             nodeList.remove(0);
             internalNode.setFrequency(internalNode.getLeft().getFrequency() + internalNode.getRight().getFrequency());
             nodeList.add(internalNode);

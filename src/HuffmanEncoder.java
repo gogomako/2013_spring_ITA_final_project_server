@@ -16,7 +16,7 @@ public class HuffmanEncoder {
         //CBManager.initCodebook();        
     }
     
-    public String encode(String inputString){        
+    public byte[] encode(String inputString){        
         String outputString = "";       
         for(int i=0 ; i<inputString.length() ; i++){ 
             Character c=new Character(inputString.charAt(i));
@@ -29,6 +29,21 @@ public class HuffmanEncoder {
                 //TODO error handling
             }
         }
-        return outputString;
+        return toBinary(outputString+CBManager.getCodeword("end"));
     }    
+    
+    public byte[] toBinary(String s) {           
+        int sLen = s.length();                         //get bits number
+        byte[] toReturn = new byte[(sLen + Byte.SIZE - 1) / Byte.SIZE];  //compute byte number
+        char c;
+        for (int i = 0; i < sLen; i++) {
+            if ((c = s.charAt(i)) == '1') {
+                // byte[i/8] OR 10000000 >>> i%8
+                toReturn[i / Byte.SIZE] = (byte) (toReturn[i / Byte.SIZE] | (0x80 >>> (i % Byte.SIZE)));  
+            } else if (c != '0') {
+                throw new IllegalArgumentException();
+            }
+        }
+        return toReturn;
+    }
 }

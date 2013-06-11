@@ -1,5 +1,4 @@
 
-
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,16 +25,16 @@ public class WordFreqManager {
 
     static HashMap<String, Integer> wordFreq;
     static XMLOutputter outputer;
-    static String filepath="word count.xml";
+    static String filepath = "word count.xml";
 
-    WordFreqManager() {        
+    WordFreqManager() {
     }
-    
-    public void initWordFreq(){
+
+    public void initWordFreq() {
         //todo
     }
-    
-    public void writeWordFreqToXML(){
+
+    public void writeWordFreqToXML() {
         //todo
         Element root = new Element("WordCount");
         Document codeXML = new Document(root);
@@ -60,11 +59,11 @@ public class WordFreqManager {
             //TODO error handling
         }
     }
-    
-    public void readWordFreqFromXML(){
+
+    public void readWordFreqFromXML() {
         //todo
         //this.setDefaultFreqency();  //temperary
-        wordFreq=new HashMap<String, Integer>();
+        wordFreq = new HashMap<String, Integer>();
         SAXBuilder builder = new SAXBuilder(false);
         Document doc;
         try {
@@ -85,7 +84,7 @@ public class WordFreqManager {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-        }       
+        }
     }
 
     public void setDefaultFreqency() {
@@ -93,33 +92,39 @@ public class WordFreqManager {
         System.out.println("setDefaultFreqency()");
         for (int i = 32; i < 127; i++) {
             String word = new Character((char) i).toString();
-            System.out.println("put "+word+" 1");
-            wordFreq.put(word, 1);            
+            System.out.println("put " + word + " 1");
+            wordFreq.put(word, 1);
         }
+        for (int i = 0; i < 1; i++) {
+            this.countFrequency("aaaaaaaaabbcccdddddeeeeeeeeeeeeefffggghhhhhhhiiiiiiijklllllmmmnnnnnnnooooooooppqrrrrrrsssssssttttttttttuuuvwwwxyyz");
+        }
+        wordFreq.put("end", 100);
         this.writeWordFreqToXML();
     }
 
     public void setWordFrequency(String word, int freq) {
         wordFreq.put(word, freq);
     }
-    
-    public int getFrquency(String word){
-        System.out.println("try to get "+word);
-        if(wordFreq!=null)return wordFreq.get(word);
+
+    public int getFrquency(String word) {
+        System.out.println("try to get " + word);
+        if (wordFreq != null) {
+            return wordFreq.get(word);
+        }
         return 0;
     }
-    
-    public HashMap<String, Integer> getFrquency(){
+
+    public HashMap<String, Integer> getFrquency() {
         return wordFreq;
     }
 
     public void countFrequency(String inputString) {
-        System.out.println("count "+inputString);
+        System.out.println("count " + inputString);
         for (int i = 0; i < inputString.length(); i++) {
             Character c = inputString.charAt(i);
-            String word=c.toString();
-            int times=wordFreq.get(word);
-            wordFreq.put(word,times+1);
+            String word = c.toString();
+            int times = wordFreq.get(word);
+            wordFreq.put(word, times + 1);
         }
         ServerScreen.updateWordCountArea();
     }
@@ -130,7 +135,7 @@ public class WordFreqManager {
                 Node n = new Node();
                 n.setWord(entry.getKey());
                 n.setFrequency(entry.getValue());
-                nodes.add(n);                
+                nodes.add(n);
             }
         }
         return nodes;
@@ -150,6 +155,4 @@ public class WordFreqManager {
         });
         return sortedNodeFrequency;
     }
-
-
 }

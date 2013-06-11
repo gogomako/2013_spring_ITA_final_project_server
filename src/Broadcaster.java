@@ -24,6 +24,7 @@ public class Broadcaster {
     static ArrayList<ClientUser> clientList;
     static LogManager logManager;
     static int port;
+    HuffmanEncoder encoder;
 
     Broadcaster(){}
     
@@ -86,8 +87,7 @@ public class Broadcaster {
         for (int i = 0; i < clientList.size(); i++) {
             clist.append("," + clientList.get(i).getUserNickName());
         }
-        Message clientListMsg = new Message(0, "Client List:", clist.toString());
-        this.broadcast(clientListMsg);
+        this.breadcastSystemMsg("Client List:", clist.toString());
     }
 
     public boolean broadcast(Message msg) {
@@ -147,8 +147,7 @@ public class Broadcaster {
     
     public void broadcastCodeBook(){
         System.out.println("broadcastCodeBook()");
-        Message msg=new Message(0,"System Msg:","Server Update Codebook");
-        this.broadcast(msg);
+        this.breadcastSystemMsg("System Msg:","Server Update Codebook");       
         System.out.println(clientList.size());
         for (int i = 0; i < clientList.size(); i++) {
             InetAddress ip=clientList.get(i).getUserIP();
@@ -160,5 +159,10 @@ public class Broadcaster {
                 ex.printStackTrace();
             }
         }
+    }
+    
+    public void breadcastSystemMsg(String sender,String m){        
+        SystemMessage sysm = new SystemMessage(sender,m);
+        this.broadcast(sysm);
     }
 }
